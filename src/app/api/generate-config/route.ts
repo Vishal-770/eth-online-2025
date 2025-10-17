@@ -22,6 +22,11 @@ export async function GET(): Promise<NextResponse> {
       );
     }
 
+    console.log("Initializing Reclaim with:");
+    console.log("- APP_ID:", APP_ID.substring(0, 10) + "...");
+    console.log("- PROVIDER_ID:", PROVIDER_ID);
+    console.log("- BASE_URL:", BASE_URL);
+
     const reclaimProofRequest = await ReclaimProofRequest.init(
       APP_ID,
       APP_SECRET,
@@ -33,11 +38,19 @@ export async function GET(): Promise<NextResponse> {
 
     const reclaimProofRequestConfig = reclaimProofRequest.toJsonString();
 
+    console.log("✅ Successfully generated Reclaim config");
     return NextResponse.json({ reclaimProofRequestConfig });
   } catch (error) {
     console.error("Error generating request config:", error);
+    console.error(
+      "Error details:",
+      error instanceof Error ? error.message : String(error)
+    );
     return NextResponse.json(
-      { error: "Failed to generate request config" },
+      {
+        error: "Failed to generate request config",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
