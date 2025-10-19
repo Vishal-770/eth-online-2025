@@ -64,10 +64,12 @@ export default function StartReclaimVerification() {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-md">
-      <Card>
+      <Card className="border-border bg-card">
         <CardHeader>
-          <CardTitle>Reclaim Verification</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">
+            Reclaim Verification
+          </CardTitle>
+          <CardDescription className="text-foreground/60">
             Click the button below to start the verification process
           </CardDescription>
         </CardHeader>
@@ -76,13 +78,13 @@ export default function StartReclaimVerification() {
             onClick={handleVerification}
             disabled={isLoading}
             size="lg"
-            className="w-full"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isLoading ? "Verifying..." : "Start Verification"}
           </Button>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive">
               {error}
             </div>
           )}
@@ -90,14 +92,14 @@ export default function StartReclaimVerification() {
       </Card>
 
       {proofs !== null && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader>
-            <CardTitle className="text-green-900">
+            <CardTitle className="text-foreground">
               ✅ Verification Successful!
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="text-xs whitespace-pre-wrap break-words p-3 bg-white rounded-md border border-green-200 overflow-auto max-h-96">
+            <pre className="text-xs whitespace-pre-wrap break-words p-3 bg-background rounded-md border border-border overflow-auto max-h-96 text-foreground">
               {JSON.stringify(proofs, null, 2)}
             </pre>
           </CardContent>

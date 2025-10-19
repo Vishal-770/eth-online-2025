@@ -1,0 +1,43 @@
+"use client";
+
+import * as React from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+
+export function SingleClickModeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  // Ensure theme is loaded before rendering
+  React.useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  const isDark = theme === "dark";
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={handleToggle}
+      className="relative w-10 h-10"
+    >
+      <Sun
+        className={`absolute h-5 w-5 transition-transform duration-300 ${
+          isDark ? "scale-0 rotate-90" : "scale-100 rotate-0"
+        }`}
+      />
+      <Moon
+        className={`absolute h-5 w-5 transition-transform duration-300 ${
+          isDark ? "scale-100 rotate-0" : "scale-0 -rotate-90"
+        }`}
+      />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
+  );
+}
