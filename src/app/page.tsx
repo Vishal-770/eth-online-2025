@@ -1,4 +1,4 @@
-import StartReclaimVerification from "@/components/StartReclaimVerification";
+import IntegratedVerification from "@/components/IntegratedVerification";
 
 export default function Home() {
   return (
@@ -7,16 +7,17 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Reclaim Protocol Verification
+            Secure Credential Verification
           </h1>
           <p className="text-lg text-foreground/70">
-            Securely verify your credentials with Reclaim Protocol
+            Verify credentials with Reclaim Protocol & store encrypted proofs on
+            IPFS
           </p>
         </div>
 
         {/* Main Content */}
         <div className="flex justify-center">
-          <StartReclaimVerification />
+          <IntegratedVerification />
         </div>
 
         {/* Footer Info */}
@@ -30,6 +31,15 @@ export default function Home() {
               className="text-primary hover:underline font-medium"
             >
               Reclaim Protocol
+            </a>
+            {" & "}
+            <a
+              href="https://lighthouse.storage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline font-medium"
+            >
+              Lighthouse Storage
             </a>
           </p>
         </div>

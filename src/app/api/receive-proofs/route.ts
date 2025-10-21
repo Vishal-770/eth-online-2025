@@ -5,136 +5,181 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    console.log("📨 Received proof submission request");
+    console.log("📨 [RECEIVE-PROOFS] Received proof submission request");
 
-    // Get the raw body as text (Reclaim sends it URL-encoded)
+    // Step 1: Get raw body exactly like Express docs
     const rawBody = await request.text();
-    console.log("📝 Raw body length:", rawBody.length);
+    console.log("📝 [RECEIVE-PROOFS] Raw body length:", rawBody.length);
+    console.log("📝 [RECEIVE-PROOFS] Raw body (first 200 chars):", rawBody);
 
     if (!rawBody || rawBody.length === 0) {
-      console.warn("⚠️  Empty body received");
+      console.warn("⚠️  [RECEIVE-PROOFS] Empty body received");
       return NextResponse.json(
         { error: "Empty request body" },
         { status: 400 }
       );
     }
 
-    // Decode the URL-encoded body
+    // Step 2: Decode the URL-encoded body exactly like Express docs
+    // const decodedBody = decodeURIComponent(req.body);
+    let decodedBody: string;
+    try {
+      decodedBody = decodeURIComponent(rawBody);
+      console.log(
+        "🔓 [RECEIVE-PROOFS] Successfully decoded body (first 200 chars):",
+        decodedBody
+      );
+    } catch (decodeError) {
+      console.error("❌ [RECEIVE-PROOFS] Failed to decode body:", decodeError);
+      return NextResponse.json(
+        { error: "Failed to decode request body" },
+        { status: 400 }
+      );
+    }
+
+    // Step 3: Parse JSON exactly like Express docs
+    // const proof = JSON.parse(decodedBody);
     let proof;
     try {
-      const decodedBody = decodeURIComponent(rawBody);
       proof = JSON.parse(decodedBody);
-      console.log("✅ Successfully parsed proof object");
-      console.log("Proof keys:", Object.keys(proof));
+      console.log("✅ [RECEIVE-PROOFS] Successfully parsed proof JSON");
+      console.log(
+        "🔑 [RECEIVE-PROOFS] Proof top-level keys:",
+        Object.keys(proof)
+      );
+
+      // Pretty print the entire proof object
+      console.log("\n📋 [RECEIVE-PROOFS] ===== FULL PROOF OBJECT =====");
+      console.log(JSON.stringify(proof, null, 2));
+      console.log("===== END PROOF OBJECT =====\n");
     } catch (parseError) {
-      console.error("❌ Failed to parse proof:", parseError);
+      console.error("❌ [RECEIVE-PROOFS] Failed to parse JSON:", parseError);
       return NextResponse.json(
         { error: "Invalid JSON format", details: String(parseError) },
         { status: 400 }
       );
     }
 
-    // The proof object from Reclaim contains: identifier, claimData, signatures, witnesses, publicData
-    // We need to verify it using the verifyProof function
-    console.log("🔍 Verifying proof...");
-    console.log("Proof structure:", {
-      hasIdentifier: !!proof?.identifier,
-      hasClaimData: !!proof?.claimData,
-      hasSignatures: !!proof?.signatures,
-      hasWitnesses: !!proof?.witnesses,
-      hasPublicData: !!proof?.publicData,
-    });
+    // Log proof structure
+    console.log("� [RECEIVE-PROOFS] Proof structure:");
+    console.log("  - identifier:", !!proof?.identifier);
+    console.log("  - claimData:", !!proof?.claimData);
+    console.log(
+      "  - signatures:",
+      Array.isArray(proof?.signatures) ? proof.signatures.length : 0
+    );
+    console.log(
+      "  - witnesses:",
+      Array.isArray(proof?.witnesses) ? proof.witnesses.length : 0
+    );
+    console.log("  - publicData:", !!proof?.publicData);
 
-    // Verify the proof - pass the entire proof object
-    let verificationResult;
+    // Step 4: Verify the proof exactly like Express docs
+    // const result = await verifyProof(proof)
+    console.log("🔍 [RECEIVE-PROOFS] Starting proof verification...");
+    let result: boolean;
+
     try {
-      verificationResult = await verifyProof(proof);
-      console.log("✅ Verification result:", verificationResult);
+      result = await verifyProof(proof);
+      console.log(
+        "✅ [RECEIVE-PROOFS] Verification completed. Result:",
+        result
+      );
     } catch (verifyError) {
-      console.error("❌ Verification error:", verifyError);
       console.error(
-        "Error message:",
-        verifyError instanceof Error ? verifyError.message : String(verifyError)
+        "❌ [RECEIVE-PROOFS] Verification threw error:",
+        verifyError
       );
-
-      // Even if verification fails, we can still extract the public data
-      // For development, we might accept the proof anyway
-      console.warn("⚠️  Verification failed, but extracting public data...");
-
-      return NextResponse.json(
-        {
-          success: true, // Accept even if verification fails for now
-          message: "Proof received (verification pending)",
-          identifier: proof?.identifier,
-          userid: proof?.publicData?.userid,
-          orders: proof?.publicData?.orders?.length || 0,
-          raw: {
-            claimData: proof?.claimData,
-            publicData: proof?.publicData,
-          },
-        },
-        { status: 200 }
-      );
+      if (verifyError instanceof Error) {
+        console.error("  Error message:", verifyError.message);
+        console.error("  Error name:", verifyError.name);
+        console.error("  Stack:", verifyError.stack?.substring(0, 300));
+      }
+      // Don't return early - log what we got
+      result = false;
     }
 
-    if (!verificationResult) {
+    // Step 5: Check verification result exactly like Express docs
+    // if (!result) {
+    //   return res.status(400).json({ error: 'Invalid proofs data' });
+    // }
+    if (!result) {
       console.warn(
-        "⚠️  Proof verification failed - verifyProof returned false"
+        "⚠️  [RECEIVE-PROOFS] Verification failed - result is false"
+      );
+      console.warn("⚠️  [RECEIVE-PROOFS] This typically means:");
+      console.warn("    - Attestor signature is invalid");
+      console.warn("    - Proof was tampered with");
+      console.warn("    - Provider is not authorized");
+
+      // Log the proof for debugging
+      console.log(
+        "🔧 [RECEIVE-PROOFS] Full proof for debugging:",
+        JSON.stringify(proof, null, 2).substring(0, 500)
       );
 
-      // Extract useful data anyway
-      const userid = proof?.publicData?.userid;
-      const orders = proof?.publicData?.orders || [];
-
-      console.log("Extracted data:");
-      console.log("- User ID:", userid);
-      console.log("- Orders count:", orders.length);
-
-      // Still accept the proof but mark it as unverified
+      // For now, return 400 like the docs, but log everything
       return NextResponse.json(
-        {
-          success: true,
-          message: "Proof received (unverified)",
-          warning: "Could not verify signature",
-          identifier: proof?.identifier,
-          userid: userid,
-          ordersCount: orders.length,
-          claimProvider: proof?.claimData?.provider,
-          timestamp: proof?.claimData?.timestampS,
-        },
-        { status: 200 }
+        { error: "Invalid proofs data" },
+        { status: 400 }
       );
     }
 
-    console.log("✅ Proof verified successfully!");
+    // Step 6: Success - log everything and process
+    console.log("✅ [RECEIVE-PROOFS] Proof verification SUCCESSFUL");
 
+    // Pretty print the successful proof
+    console.log("\n✅ [RECEIVE-PROOFS] ===== VERIFIED PROOF OBJECT =====");
+    console.log(JSON.stringify(proof, null, 2));
+    console.log("===== END VERIFIED PROOF =====\n");
+
+    // Extract useful information
     const userid = proof?.publicData?.userid;
-    const orders = proof?.publicData?.orders || [];
+    const provider = proof?.claimData?.provider;
+    const timestamp = proof?.claimData?.timestampS;
 
-    console.log("Claim data:");
-    console.log("- User ID:", userid);
-    console.log("- Orders:", orders.length);
+    console.log("📌 [RECEIVE-PROOFS] Extracted information:");
+    console.log("  - User ID:", userid);
+    console.log("  - Provider:", provider);
+    console.log("  - Timestamp:", timestamp);
+    console.log("  - Identifier:", proof?.identifier);
+    console.log("  - Signatures count:", proof?.signatures?.length || 0);
+    console.log("  - Witnesses count:", proof?.witnesses?.length || 0);
 
-    // Process the proofs here (e.g., store in database, authenticate user, etc.)
+    // Process the proofs here (e.g., store in database)
+    console.log("✅ [RECEIVE-PROOFS] Processing proof...");
+
+    // Extract provider hash from context
+    let providerHash = null;
+    try {
+      const context = JSON.parse(proof?.claimData?.context || "{}");
+      providerHash = context?.providerHash;
+      console.log("📍 [RECEIVE-PROOFS] Provider Hash:", providerHash);
+    } catch {
+      console.warn("⚠️  [RECEIVE-PROOFS] Could not extract provider hash");
+    }
+
     return NextResponse.json({
       success: true,
       message: "Proof verified successfully",
       identifier: proof?.identifier,
       userid: userid,
-      ordersCount: orders.length,
-      orders: orders,
-      claimProvider: proof?.claimData?.provider,
-      timestamp: proof?.claimData?.timestampS,
+      provider: provider,
+      timestamp: timestamp,
+      providerHash: providerHash,
+      fullProof: proof, // Send complete proof to frontend for verification
     });
   } catch (error) {
-    console.error("❌ Error in receive-proofs handler:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error details:", errorMessage);
+    console.error("❌ [RECEIVE-PROOFS] Unexpected error:", error);
+    if (error instanceof Error) {
+      console.error("  Error message:", error.message);
+      console.error("  Error name:", error.name);
+    }
 
     return NextResponse.json(
       {
         error: "Failed to process proof",
-        details: errorMessage,
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );

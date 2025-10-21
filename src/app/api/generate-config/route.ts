@@ -33,8 +33,8 @@ export async function GET(): Promise<NextResponse> {
       PROVIDER_ID
     );
 
-    // Set callback endpoint for receiving proofs
-    reclaimProofRequest.setAppCallbackUrl(`${BASE_URL}/api/receive-proofs`);
+    // Don't set callback URL - we'll handle proof directly in frontend
+    // reclaimProofRequest.setAppCallbackUrl(`${BASE_URL}/api/receive-proofs`);
 
     const reclaimProofRequestConfig = reclaimProofRequest.toJsonString();
 
